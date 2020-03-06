@@ -1,6 +1,6 @@
-# Spinnaker AMI Image
+# Prometheus AMI Image
 
-Spinnaker Base AMI image for spinning up standalone prometheus server
+Prometheus Base AMI image for spinning up standalone prometheus server
 
 ### Install Packer
 
@@ -14,8 +14,8 @@ https://www.packer.io/downloads.html
 | ami_region        | Region to build AMI Image        | us-west-2               |
 | ami_instance_type | Type of instance used for Packer | t2.medium               |
 | ami_ssh_username  | Default SSH remote username      | ubuntu                  |
-| ami_name          | AMI image name for tagging       | spinnaker               |
-| ami_description   | AMI Image Description            | Spinnaker HAL ami image |
+| ami_name          | AMI image name for tagging       | Prometheus               |
+| ami_description   | AMI Image Description            | Prometheus HAL ami image |
 
 ### Run Packer
 
