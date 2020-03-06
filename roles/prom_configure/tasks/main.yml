@@ -1,0 +1,24 @@
+- name: copy custom alerting rule files
+  copy:
+    src: "{{ item }}"
+    dest: "{{ prometheus_config_dir }}/rules/"
+    owner: root
+    group: prometheus
+    mode: 0640
+    validate: "{{ prometheus_binary_install_dir }}/promtool check rules %s"
+  with_fileglob: "{{ prometheus_alert_rules_files }}"
+  notify:
+    - restart prometheus
+
+
+- name: copy prometheus custom static targets
+  copy:
+    src: "{{ item }}"
+    dest: "{{ prometheus_config_dir }}/file_sd/"
+    force: true
+    owner: root
+    group: prometheus
+    mode: 0640
+  with_fileglob: "{{ prometheus_static_targets_files }}"
+  notify:
+    - restart prometheus

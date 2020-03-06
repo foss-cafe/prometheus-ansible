@@ -9,5 +9,5 @@
 
   roles:
     - common
-    - prometheus
+    - prom_install
     - node_exporter

@@ -86,36 +86,53 @@
       notify:
         - restart prometheus
 
+- name: alerting rules file
+  template:
+    src: "alert.rules.j2"
+    dest: "{{ prometheus_config_dir }}/rules/ansible_managed.rules"
+    owner: root
+    group: prometheus
+    mode: 0640
+    validate: "{{ prometheus_binary_install_dir }}/promtool check rules %s"
+  when:
+    - prometheus_alert_rules != []
+  notify:
+    - restart prometheus
 
-  # rescue:
-  #   - debug:
-  #       msg: 'I caught an error, can do stuff here to fix it, :-)'    
-# - name: Download Prometheus binary
-#   get_url:
-#     url: http://example.com/path/file.conf
-#     dest: /etc/foo.conf
-#     mode: '0440'
-# - name: Add an Apt signing key, uses whichever key is at the URL
-#   apt_key:
-#     url: https://download.docker.com/linux/ubuntu/gpg
-#     state: present
-# - apt_repository:
-#     repo: deb https://download.docker.com/linux/ubuntu bionic stable
-#     state: present
-# - name: Run the equivalent of "apt-get update" as a separate step
-#   apt:
-#     update_cache: yes
+# - name: copy custom alerting rule files
+#   copy:
+#     src: "{{ item }}"
+#     dest: "{{ prometheus_config_dir }}/rules/"
+#     owner: root
+#     group: prometheus
+#     mode: 0640
+#     validate: "{{ prometheus_binary_install_dir }}/promtool check rules %s"
+#   # with_fileglob: "{{ prometheus_alert_rules_files }}"
+#   notify:
+#     - restart prometheus
 
-# - name: Install a list of packages for Docker
-#   apt:
-#     name: "{{ packages }}"
-#   vars:
-#     packages:
-#     - "docker-ce"
-#     - "docker-ce-cli"
-#     - "containerd.io"
-#   notify: restart docker
-# - name: ensure docker is running
-#   service:
-#     name: docker
-#     state: started
+
+- name: configure prometheus
+  template:
+    src: "prometheus.yml.j2"
+    dest: "{{ prometheus_config_dir }}/prometheus.yml"
+    force: true
+    owner: root
+    group: prometheus
+    mode: 0640
+    validate: "{{ prometheus_binary_install_dir }}/promtool check config %s"
+  notify:
+    - restart prometheus
+
+- name: configure prometheus static targets
+  copy:
+    content: |
+      #jinja2: lstrip_blocks: True
+      {{ item.value | to_nice_yaml(indent=2) }}
+    dest: "{{ prometheus_config_dir }}/file_sd/{{ item.key }}.yml"
+    force: true
+    owner: root
+    group: prometheus
+    mode: 0640
+  with_dict: "{{ prometheus_targets }}"
+  when: prometheus_targets != {}
