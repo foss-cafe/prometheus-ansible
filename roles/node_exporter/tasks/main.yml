@@ -1,0 +1,41 @@
+- name: create prometheus system group
+  group:
+    name: node_exporter
+    system: true
+    state: present
+
+- name: Add the user 'james' with a bash shell, appending the group 'admins' and 'developers' to the user's groups
+  user:
+    name: node_exporter
+    shell: /bin/false
+    groups: node_exporter
+
+# - name: Download Prometheus binary
+#   get_url:
+#     url: http://example.com/path/file.conf
+#     dest: /etc/foo.conf
+#     mode: '0440'
+# - name: Add an Apt signing key, uses whichever key is at the URL
+#   apt_key:
+#     url: https://download.docker.com/linux/ubuntu/gpg
+#     state: present
+# - apt_repository:
+#     repo: deb https://download.docker.com/linux/ubuntu bionic stable
+#     state: present
+# - name: Run the equivalent of "apt-get update" as a separate step
+#   apt:
+#     update_cache: yes
+
+# - name: Install a list of packages for Docker
+#   apt:
+#     name: "{{ packages }}"
+#   vars:
+#     packages:
+#     - "docker-ce"
+#     - "docker-ce-cli"
+#     - "containerd.io"
+#   notify: restart docker
+# - name: ensure docker is running
+#   service:
+#     name: docker
+#     state: started

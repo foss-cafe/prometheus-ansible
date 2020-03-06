@@ -1,0 +1,121 @@
+- name: create prometheus system group
+  group:
+    name: prometheus
+    system: true
+    state: present
+
+- name: Add the user 'prometheus' with a bash shell as /bin/false, appending the group 'prometheus'
+  user:
+    name: prometheus
+    shell: /bin/false
+    groups: prometheus
+
+- name: create prometheus data directory
+  file:
+    path: "{{ prometheus_db_dir }}"
+    state: directory
+    owner: prometheus
+    group: prometheus
+    mode: 0755
+
+- name: create prometheus configuration directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: prometheus
+    mode: 0770
+  with_items:
+    - "{{ prometheus_config_dir }}"
+    - "{{ prometheus_config_dir }}/conf.d"
+    - "{{ prometheus_config_dir }}/rules"
+    - "{{ prometheus_config_dir }}/file_sd"
+    # - "{{ prometheus_config_dir }}/console_libraries"
+    # - "{{ prometheus_config_dir }}/consoles"
+
+- name: Handle the error While Installing prometheus
+  block:
+    - name: Download foo.conf
+      get_url:
+        url: https://github.com/prometheus/prometheus/releases/download/v{{ prometheus_version }}/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz
+        dest: /tmp/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz
+        checksum: "sha256:{{ prometheus_checksum }}"
+      register: result
+      until: result is succeeded
+      retries: 5
+      delay: 2
+    - name: unpack prometheus binaries
+      become: false
+      unarchive:
+        src: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
+        dest: "/tmp"
+        creates: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64/prometheus"
+        remote_src: yes
+    - name: propagate official prometheus and promtool binaries
+      copy:
+        src: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64/{{ item }}"
+        dest: "{{ prometheus_binary_install_dir }}/{{ item }}"
+        mode: 0755
+        owner: prometheus
+        group: prometheus
+        remote_src: yes
+      with_items:
+        - prometheus
+        - promtool
+        - tsdb
+
+    - name: Copy official console templates
+      copy:
+        src: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64/{{ item }}"
+        dest: "{{ prometheus_config_dir }}/"
+        mode: 0755
+        owner: prometheus 
+        group: prometheus
+        remote_src: yes
+        directory_mode: yes
+      with_items:
+        - console_libraries
+        - consoles
+    - name: create systemd service unit
+      template:
+        src: prometheus.service.j2
+        dest: /etc/systemd/system/prometheus.service
+        owner: root
+        group: root
+        mode: 0644
+      notify:
+        - restart prometheus
+
+
+  # rescue:
+  #   - debug:
+  #       msg: 'I caught an error, can do stuff here to fix it, :-)'    
+# - name: Download Prometheus binary
+#   get_url:
+#     url: http://example.com/path/file.conf
+#     dest: /etc/foo.conf
+#     mode: '0440'
+# - name: Add an Apt signing key, uses whichever key is at the URL
+#   apt_key:
+#     url: https://download.docker.com/linux/ubuntu/gpg
+#     state: present
+# - apt_repository:
+#     repo: deb https://download.docker.com/linux/ubuntu bionic stable
+#     state: present
+# - name: Run the equivalent of "apt-get update" as a separate step
+#   apt:
+#     update_cache: yes
+
+# - name: Install a list of packages for Docker
+#   apt:
+#     name: "{{ packages }}"
+#   vars:
+#     packages:
+#     - "docker-ce"
+#     - "docker-ce-cli"
+#     - "containerd.io"
+#   notify: restart docker
+# - name: ensure docker is running
+#   service:
+#     name: docker
+#     state: started
