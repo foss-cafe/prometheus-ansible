@@ -1,0 +1,13 @@
+[Unit]
+Description=Node Exporter
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=node_exporter
+Group=node_exporter
+Type=simple
+ExecStart={{ prometheus_binary_install_dir }}/node_exporter {{ node_exporter_additional_args }}
+
+[Install]
+WantedBy=multi-user.target

@@ -1,4 +1,6 @@
-- name: restart docker
-  service:
-    name: docker
+- name: restart node_exporter
+  systemd:
     state: restarted
+    daemon_reload: yes
+    enabled: yes
+    name: node_exporter
